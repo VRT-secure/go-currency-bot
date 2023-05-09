@@ -41,5 +41,5 @@ jobs:
           key: ${{ secrets.SSH_PRYVATE_KEY }}
           script: |
             docker pull ivan556/currency_golang_bot &&\
-            docker run --name go_currency_bot --restart=on-failure ivan556/currency_golang_bot
+            docker run --name go_currency_bot --restart=on-failure -d ivan556/currency_golang_bot
 

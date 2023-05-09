@@ -128,7 +128,7 @@ func main() {
 				if err != nil {
 					msg.Text, event = "Ошибка конвертирования, попробуйте отправить число снова или отмените операцию /cancel", ""
 				}else {
-					msg.Text, event =  strconv.Itoa(amount) + " " + userFSM.UserData["firstCurrencyCode"] + " = " + userFSM.UserData["secondCurrencyCode"] + " " + answer, "start"
+					msg.Text, event =  strconv.Itoa(amount) + " " + userFSM.UserData["firstCurrencyCode"] + " = " + answer + " " + userFSM.UserData["secondCurrencyCode"], "start"
 					bot.Send(msg)
 					msg.ReplyMarkup = choiceOperationKeyboard
 					msg.Text = "Выберите операцию"
