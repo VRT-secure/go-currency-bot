@@ -48,19 +48,20 @@ func main() {
 			msg.Text = "Выберите операцию"
 			msg.ReplyMarkup = choiceOperationKeyboard
 		case "help":
-			msg.Text = "bot show currency course"
+			msg.Text = "Бот для конвертирования валют. Если хотите венруться в меню выбора операций отправьте /cancel"
 			bot.Send(msg)
 			continue
 		case "cancel":
 			event = "start"
 			userFSM.changeEvent(event)
-			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-			bot.Send(msg)
 			msg.Text = "Операция отменена"
 			msg.ReplyMarkup = choiceOperationKeyboard
+			bot.Send(msg)
+			continue
 		default:
 			event = ""
 		}
+
 
 		if userFSM.FSM.Current() == "choiceOperation" {
 			choice := update.Message.Text
@@ -83,6 +84,10 @@ func main() {
 			charCode := update.Message.Text
 			msg.Text, event = handleCurrencyChoice(charCodes, charCode, map_currencyes, "start")
 			bot.Send(msg)
+			if event == "" {
+				continue
+			}
+
 			msg.ReplyMarkup = choiceOperationKeyboard
 			msg.Text = "Выберите операцию"
 
@@ -90,12 +95,21 @@ func main() {
 			charCode := update.Message.Text
 			msg.Text, event = handleCurrencyChoice(charCodes, charCode, map_currencyes, "secondCyrrency")
 			bot.Send(msg)
+			if event == "" {
+				continue
+			}
+
 			userFSM.UserData["firstCurrencyCode"] = charCode
 			msg.Text = "Выберите вторую валюту"
 
 		} else if userFSM.FSM.Current() == "choiceSecondCurrency" {
 			charCode := update.Message.Text
 			msg.Text, event = handleCurrencyChoice(charCodes, charCode, map_currencyes, "amount")
+			bot.Send(msg)
+			if event == "" {
+				continue
+			}
+
 			userFSM.UserData["secondCurrencyCode"] = charCode
 			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 			msg.Text = "Введите количество целым числом"
@@ -103,7 +117,7 @@ func main() {
 		} else if userFSM.FSM.Current() == "choiceAmount" {
 			amount, err := strconv.Atoi(update.Message.Text)
 			if err != nil {
-				msg.Text, event = "Ошибка, введите целое число или отменити операцию /cancel", ""
+				msg.Text, event = "Ошибка, введите целое число или отмените операцию /cancel", ""
 			}else {
 				answer, err := convertCurrency(
 					userFSM.UserData["firstCurrencyCode"], 
@@ -112,9 +126,12 @@ func main() {
 					amount,
 				)
 				if err != nil {
-					msg.Text, event = "Ошибка конвертирования, попробуйте отправить число снова или отменити операцию /cancel", ""
+					msg.Text, event = "Ошибка конвертирования, попробуйте отправить число снова или отмените операцию /cancel", ""
 				}else {
-					msg.Text, event = userFSM.UserData["firstCurrencyCode"] + " на " + userFSM.UserData["secondCurrencyCode"] + " = " + answer, "finish"
+					msg.Text, event =  strconv.Itoa(amount) + " " + userFSM.UserData["firstCurrencyCode"] + " = " + userFSM.UserData["secondCurrencyCode"] + " " + answer, "start"
+					bot.Send(msg)
+					msg.ReplyMarkup = choiceOperationKeyboard
+					msg.Text = "Выберите операцию"
 				}
 			}
 		}

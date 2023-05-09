@@ -28,17 +28,20 @@ type UserFSM struct {
 func NewUserFSM(chatID int64) *UserFSM {
 	u := &UserFSM{
 		ChatID: chatID,
+		UserData: make(map[string]string),
 	}
 
 	u.FSM = fsm.NewFSM(
 		"init",
 		fsm.Events{
-			{Name: "start", Src: []string{"init", "choiceOperation", "choiceOneCurrency", "choiceFirstCurrency", "choiceSecondCurrency"}, Dst: "choiceOperation"},
+			{Name: "start", Src: []string{"init", 
+			"choiceOperation", "choiceOneCurrency", 
+			"choiceFirstCurrency", "choiceSecondCurrency", 
+			"choiceAmount"}, Dst: "choiceOperation"},
 			{Name: "courseCurrency", Src: []string{"choiceOperation"}, Dst: "choiceOneCurrency"},
 			{Name: "firstCyrrency", Src: []string{"choiceOperation"}, Dst: "choiceFirstCurrency"},
 			{Name: "secondCyrrency", Src: []string{"choiceFirstCurrency"}, Dst: "choiceSecondCurrency"},
 			{Name: "amount", Src: []string{"choiceSecondCurrency"}, Dst: "choiceAmount"},
-			// {Name: "finish", Src: []string{"choiceOperation", "choiceOneCurrency", "choiceFirstCurrency", "choiceSecondCurrency"}, Dst: "init"},
 		},
 		fsm.Callbacks{
 			"enter_state": func(ctx context.Context, e *fsm.Event) {
@@ -76,8 +79,9 @@ func currencyCharCodes(map_currencyes map[string][]string) []string {
 
 func currencyInfo(cyrrency_data []string) string {
 	answer := ""
+	labels_str := []string {"Абревиатура", "Номинал", "Название", "Цена в рублях на сегодня", "Прошлая цена"}
 	for i := 0; i < len(cyrrency_data); i++ {
-		answer += cyrrency_data[i] + "\n"
+		answer += labels_str[i] + ": " + cyrrency_data[i] + "\n"
 	}
 	return answer
 }
@@ -111,7 +115,7 @@ func convertCurrency(first_currency_code, second_currency_code string, map_curre
 	}
 
 	tmp := value_fist_currency / (value_second_currency / float64(nominal_second_currency)) / float64(nominal_fist_currency) * float64(amount)
-	answer := fmt.Sprintf("%.5f", tmp)
+	answer := fmt.Sprintf("%.4f", tmp)
 	return answer, err
 }
 
