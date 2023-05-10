@@ -1,18 +1,17 @@
 package main
 
 import (
-	"log"
-	"fmt"
-	"strconv"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/thoas/go-funk"
-	"github.com/looplab/fsm"
 	"context"
+	"fmt"
+	"log"
+	"strconv"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/looplab/fsm"
+	"github.com/thoas/go-funk"
 )
 
-
-
-var choiceOperationKeyboard = tgbotapi.NewReplyKeyboard(
+var mainMenuKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("Узнать курс валюты"),
 		tgbotapi.NewKeyboardButton("Калькулятор валют"),
@@ -27,17 +26,17 @@ type UserFSM struct {
 
 func NewUserFSM(chatID int64) *UserFSM {
 	u := &UserFSM{
-		ChatID: chatID,
+		ChatID:   chatID,
 		UserData: make(map[string]string),
 	}
 
 	u.FSM = fsm.NewFSM(
 		"init",
 		fsm.Events{
-			{Name: "start", Src: []string{"init", 
-			"choiceOperation", "choiceOneCurrency", 
-			"choiceFirstCurrency", "choiceSecondCurrency", 
-			"choiceAmount"}, Dst: "choiceOperation"},
+			{Name: "start", Src: []string{"init",
+				"choiceOperation", "choiceOneCurrency",
+				"choiceFirstCurrency", "choiceSecondCurrency",
+				"choiceAmount"}, Dst: "choiceOperation"},
 			{Name: "courseCurrency", Src: []string{"choiceOperation"}, Dst: "choiceOneCurrency"},
 			{Name: "firstCyrrency", Src: []string{"choiceOperation"}, Dst: "choiceFirstCurrency"},
 			{Name: "secondCyrrency", Src: []string{"choiceFirstCurrency"}, Dst: "choiceSecondCurrency"},
@@ -67,8 +66,6 @@ func (u *UserFSM) changeEvent(event string) {
 	}
 }
 
-
-
 func currencyCharCodes(map_currencyes map[string][]string) []string {
 	keys := make([]string, 0, len(map_currencyes))
 	for key := range map_currencyes {
@@ -79,7 +76,7 @@ func currencyCharCodes(map_currencyes map[string][]string) []string {
 
 func currencyInfo(cyrrency_data []string) string {
 	answer := ""
-	labels_str := []string {"Абревиатура", "Номинал", "Название", "Цена в рублях на сегодня", "Прошлая цена"}
+	labels_str := []string{"Абревиатура", "Номинал", "Название", "Цена в рублях на сегодня", "Прошлая цена"}
 	for i := 0; i < len(cyrrency_data); i++ {
 		answer += labels_str[i] + ": " + cyrrency_data[i] + "\n"
 	}
@@ -133,4 +130,8 @@ func charCodesKeyboard(charCodes []string) tgbotapi.ReplyKeyboardMarkup {
 	}
 
 	return tgbotapi.NewReplyKeyboard(rows...)
+}
+
+func mainMenu(text string, keyboard tgbotapi.ReplyKeyboardMarkup) (tgbotapi.ReplyKeyboardMarkup, string) {
+	return keyboard, text 
 }
