@@ -65,23 +65,23 @@ func (u *UserFSM) changeEvent(event string) {
 	}
 }
 
-func convertFiatCurrency(first_currency_code, second_currency_code string, fist_fiatCurrency FiatCurrency, second_fiatCurrency FiatCurrency, amount int) (string, error) {
-	value_fist_currency, err := strconv.ParseFloat(fiatCurrency.Value, 32)
+func convertFiatCurrency(fist_fiatCurrency, second_fiatCurrency FiatCurrency, amount int) (string, error) {
+	value_fist_currency, err := strconv.ParseFloat(fist_fiatCurrency.Value, 32)
 	if err != nil {
 		return "", err
 	}
 
-	value_second_currency, err := strconv.ParseFloat(map_currencyes[second_currency_code][3], 32)
+	value_second_currency, err := strconv.ParseFloat(second_fiatCurrency.Value, 32)
 	if err != nil {
 		return "", err
 	}
 
-	nominal_fist_currency, err := strconv.Atoi(map_currencyes[first_currency_code][1])
+	nominal_fist_currency, err := strconv.Atoi(fist_fiatCurrency.Nominal)
 	if err != nil {
 		return "", err
 	}
 
-	nominal_second_currency, err := strconv.Atoi(map_currencyes[second_currency_code][1])
+	nominal_second_currency, err := strconv.Atoi(second_fiatCurrency.Nominal)
 	if err != nil {
 		return "", err
 	}

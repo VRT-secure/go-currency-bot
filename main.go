@@ -81,6 +81,7 @@ func main() {
 			event = ""
 		}
 
+
 		user_text := update.Message.Text
 		if userFSM.FSM.Current() == "choiceOperation" {
 
@@ -130,10 +131,14 @@ func main() {
 			if err != nil {
 				msg.Text, event = "Ошибка, введите целое число или отмените операцию /cancel", ""
 			} else {
+				fist_fiatCurrency, err := selectFiatFromTable(db, userFSM.UserData["firstCurrencyCode"])
+				if err != nil {
+					
+				}
+				second_fiatCurrency, err := selectFiatFromTable(db, userFSM.UserData["secondCurrencyCode"])
 				answer, err := convertFiatCurrency(
-					userFSM.UserData["firstCurrencyCode"],
-					userFSM.UserData["secondCurrencyCode"],
-					map_currencyes,
+					fist_fiatCurrency,
+					second_fiatCurrency,
 					amount,
 				)
 				if err != nil {
