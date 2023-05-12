@@ -28,9 +28,13 @@ func main() {
 
 	createTable(db, &FiatCurrency{})
 
+	if isFiatTableEmpty(db) {
+		parseJsonIntoTable(db, URL)
+	}
 	// запускаем cron задачу, которая выполняется каждую полночь
 	c := cron.New()
 	c.AddFunc("0 0 0 * * *", func() {
+		parseJsonIntoTable(db, URL)
 	})
 
 	updateConfig := tgbotapi.NewUpdate(0)
@@ -41,8 +45,7 @@ func main() {
 	// машина состояний
 	userFSMs := make(map[int64]*UserFSM)
 
-	map_currencyes := parseJsonIntoTable(URL)
-	charCodes := currencyCharCodes(map_currencyes)
+	charCodes := fiatCharCodes(db)
 
 	for update := range updates {
 		if update.Message == nil {
@@ -93,7 +96,7 @@ func main() {
 				msg.Text = "Ошибка, такой операции не существует, попробуйте снова"
 			}
 		} else if userFSM.FSM.Current() == "choiceOneCurrency" {
-			msg.Text, event = handleCurrencyChoice(charCodes, user_text, map_currencyes, "start")
+			msg.Text, event = handleFiatCurrencyChoice(charCodes, user_text, map_currencyes, "start")
 			bot.Send(msg)
 			if event == "" {
 				continue
@@ -102,7 +105,7 @@ func main() {
 			msg.ReplyMarkup, msg.Text = mainMenu("Выберите операцию", mainMenuKeyboard)
 
 		} else if userFSM.FSM.Current() == "choiceFirstCurrency" {
-			msg.Text, event = handleCurrencyChoice(charCodes, user_text, map_currencyes, "secondCyrrency")
+			msg.Text, event = handleFiatCurrencyChoice(charCodes, user_text, map_currencyes, "secondCyrrency")
 			bot.Send(msg)
 			if event == "" {
 				continue
@@ -112,7 +115,7 @@ func main() {
 			msg.Text = "Выберите вторую валюту"
 
 		} else if userFSM.FSM.Current() == "choiceSecondCurrency" {
-			msg.Text, event = handleCurrencyChoice(charCodes, user_text, map_currencyes, "amount")
+			msg.Text, event = handleFiatCurrencyChoice(charCodes, user_text, map_currencyes, "amount")
 			bot.Send(msg)
 			if event == "" {
 				continue
@@ -127,7 +130,7 @@ func main() {
 			if err != nil {
 				msg.Text, event = "Ошибка, введите целое число или отмените операцию /cancel", ""
 			} else {
-				answer, err := convertCurrency(
+				answer, err := convertFiatCurrency(
 					userFSM.UserData["firstCurrencyCode"],
 					userFSM.UserData["secondCurrencyCode"],
 					map_currencyes,

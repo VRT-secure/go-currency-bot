@@ -8,7 +8,6 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/looplab/fsm"
-	"github.com/thoas/go-funk"
 )
 
 var mainMenuKeyboard = tgbotapi.NewReplyKeyboard(
@@ -66,32 +65,8 @@ func (u *UserFSM) changeEvent(event string) {
 	}
 }
 
-func currencyCharCodes(map_currencyes map[string][]string) []string {
-	keys := make([]string, 0, len(map_currencyes))
-	for key := range map_currencyes {
-		keys = append(keys, key)
-	}
-	return keys
-}
-
-func currencyInfo(cyrrency_data []string) string {
-	answer := ""
-	labels_str := []string{"Абревиатура", "Номинал", "Название", "Цена в рублях на сегодня", "Прошлая цена"}
-	for i := 0; i < len(cyrrency_data); i++ {
-		answer += labels_str[i] + ": " + cyrrency_data[i] + "\n"
-	}
-	return answer
-}
-
-func handleCurrencyChoice(charCodes []string, charCode string, map_currencyes map[string][]string, nextEvent string) (string, string) {
-	if funk.Contains(charCodes, charCode) {
-		return currencyInfo(map_currencyes[charCode]), nextEvent
-	}
-	return "Данная валюта не найдена, отправьте валюту снова или отмените операцию /cancel", ""
-}
-
-func convertCurrency(first_currency_code, second_currency_code string, map_currencyes map[string][]string, amount int) (string, error) {
-	value_fist_currency, err := strconv.ParseFloat(map_currencyes[first_currency_code][3], 32)
+func convertFiatCurrency(first_currency_code, second_currency_code string, fist_fiatCurrency FiatCurrency, second_fiatCurrency FiatCurrency, amount int) (string, error) {
+	value_fist_currency, err := strconv.ParseFloat(fiatCurrency.Value, 32)
 	if err != nil {
 		return "", err
 	}
@@ -133,5 +108,5 @@ func charCodesKeyboard(charCodes []string) tgbotapi.ReplyKeyboardMarkup {
 }
 
 func mainMenu(text string, keyboard tgbotapi.ReplyKeyboardMarkup) (tgbotapi.ReplyKeyboardMarkup, string) {
-	return keyboard, text 
+	return keyboard, text
 }
