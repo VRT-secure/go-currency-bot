@@ -4,7 +4,11 @@ import (
 	"log"
 	"os"
 	"strconv"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/robfig/cron/v3"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -16,14 +20,28 @@ func main() {
 
 	bot.Debug = true
 
+	// создаём или открываем файл БД
+	db, err := gorm.Open(sqlite.Open("currencyes.db"), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
+	}
+
+	createTable(db, &FiatCurrency{})
+
+	// запускаем cron задачу, которая выполняется каждую полночь
+	c := cron.New()
+	c.AddFunc("0 0 0 * * *", func() {
+	})
+
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 60
 
 	updates := bot.GetUpdatesChan(updateConfig)
 
+	// машина состояний
 	userFSMs := make(map[int64]*UserFSM)
 
-	map_currencyes := parse_json(URL)
+	map_currencyes := parseJsonIntoTable(URL)
 	charCodes := currencyCharCodes(map_currencyes)
 
 	for update := range updates {
@@ -129,5 +147,3 @@ func main() {
 		bot.Send(msg)
 	}
 }
-
-
