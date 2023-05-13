@@ -23,7 +23,7 @@ jobs:
         with:
           envkey_SECRET_KEY: ${{ secrets.BOT_TOKEN }}
           file_name: .env
-          
+
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v2
@@ -47,6 +47,8 @@ jobs:
             docker rmi ivan556/currency_golang_bot && \
             docker stop go_currency_bot && \
             docker rm go_currency_bot
+            
+            sleep 5
             
             docker pull ivan556/currency_golang_bot &&\
             docker run --name go_currency_bot --restart=on-failure -d ivan556/currency_golang_bot
