@@ -60,8 +60,9 @@ func insertFiatRecordIntoTable(db *gorm.DB, charCode, nominal, name, value, prev
 
 func selectFiatFromTable(db *gorm.DB, charCode string) (FiatCurrency, error) {
 	var fiatCurrency FiatCurrency
-	result := db.Last(&fiatCurrency, "charCode = ?", charCode)
+	result := db.Last(&fiatCurrency, "char_code = ?", charCode)
 	if result.Error != nil {
+		log.Printf("Ошибка чтения фиатной валюты из БД: %v", result.Error)
 		return FiatCurrency{}, result.Error
 	}
 	return fiatCurrency, nil
@@ -70,23 +71,21 @@ func selectFiatFromTable(db *gorm.DB, charCode string) (FiatCurrency, error) {
 func isFiatTableEmpty(db *gorm.DB) bool {
 	var count int64
 	db.Model(&FiatCurrency{}).Count(&count)
-	if count == 0 {
-		return true
-	}
-	return false
+	return count == 0
 }
 
 func fiatCharCodes(db *gorm.DB) []string {
 	var fiatCurrency []FiatCurrency
 	location, err := time.LoadLocation("Europe/Moscow")
 	if err != nil {
-		log.Printf("Ошибка установки московского часового пояса для поиска фиатных валют: ", err)
+		log.Printf("Ошибка установки московского часового пояса для поиска фиатных валют: %v", err)
 	}
 	now := time.Now().In(location)
-	date := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, location)
-	result := db.Where("created_at == ?", date).Find(&fiatCurrency)
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, location)
+	endOfDay := startOfDay.Add(24 * time.Hour)
+	result := db.Where("created_at >= ? AND created_at < ?", startOfDay, endOfDay).Find(&fiatCurrency)
 	if result.Error != nil {
-		log.Printf("Ошибка поиска записей фиатных валют в БД по текущей дате: ", result.Error)
+		log.Printf("Ошибка поиска записей фиатных валют в БД по текущей дате: %v", result.Error)
 	}
 	
 	var answer_str []string

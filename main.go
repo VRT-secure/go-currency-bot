@@ -97,7 +97,13 @@ func main() {
 				msg.Text = "Ошибка, такой операции не существует, попробуйте снова"
 			}
 		} else if userFSM.FSM.Current() == "choiceOneCurrency" {
-			msg.Text, event = handleFiatCurrencyChoice(charCodes, user_text, map_currencyes, "start")
+			fiatCurrency, err := selectFiatFromTable(db, user_text)
+			if err != nil {
+				msg.Text, event = "Возникла непредвиденная ошибка, попробуйте снова, либо отправьте /cancel", ""
+				bot.Send(msg)
+				continue
+			}
+			msg.Text, event = handleFiatCurrencyChoice(charCodes, user_text, fiatCurrency, "start")
 			bot.Send(msg)
 			if event == "" {
 				continue
@@ -106,7 +112,13 @@ func main() {
 			msg.ReplyMarkup, msg.Text = mainMenu("Выберите операцию", mainMenuKeyboard)
 
 		} else if userFSM.FSM.Current() == "choiceFirstCurrency" {
-			msg.Text, event = handleFiatCurrencyChoice(charCodes, user_text, map_currencyes, "secondCyrrency")
+			fiatCurrency, err := selectFiatFromTable(db, user_text)
+			if err != nil {
+				msg.Text, event = "Возникла непредвиденная ошибка, попробуйте снова, либо отправьте /cancel", ""
+				bot.Send(msg)
+				continue
+			}
+			msg.Text, event = handleFiatCurrencyChoice(charCodes, user_text, fiatCurrency, "secondCyrrency")
 			bot.Send(msg)
 			if event == "" {
 				continue
@@ -116,7 +128,13 @@ func main() {
 			msg.Text = "Выберите вторую валюту"
 
 		} else if userFSM.FSM.Current() == "choiceSecondCurrency" {
-			msg.Text, event = handleFiatCurrencyChoice(charCodes, user_text, map_currencyes, "amount")
+			fiatCurrency, err := selectFiatFromTable(db, user_text)
+			if err != nil {
+				msg.Text, event = "Возникла непредвиденная ошибка, попробуйте снова, либо отправьте /cancel", ""
+				bot.Send(msg)
+				continue
+			}
+			msg.Text, event = handleFiatCurrencyChoice(charCodes, user_text, fiatCurrency, "amount")
 			bot.Send(msg)
 			if event == "" {
 				continue
@@ -131,11 +149,21 @@ func main() {
 			if err != nil {
 				msg.Text, event = "Ошибка, введите целое число или отмените операцию /cancel", ""
 			} else {
+				
 				fist_fiatCurrency, err := selectFiatFromTable(db, userFSM.UserData["firstCurrencyCode"])
 				if err != nil {
-					
+					msg.Text, event = "Возникла непредвиденная ошибка, попробуйте снова, либо отправьте /cancel", ""
+					bot.Send(msg)
+					continue
 				}
+				
 				second_fiatCurrency, err := selectFiatFromTable(db, userFSM.UserData["secondCurrencyCode"])
+				if err != nil {
+					msg.Text, event = "Возникла непредвиденная ошибка, попробуйте снова, либо отправьте /cancel", ""
+					bot.Send(msg)
+					continue
+				}
+				
 				answer, err := convertFiatCurrency(
 					fist_fiatCurrency,
 					second_fiatCurrency,
