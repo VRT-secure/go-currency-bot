@@ -20,7 +20,7 @@ func main() {
 	token := os.Getenv("TELEGRAM_APITOKEN")
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
-		log.Panic(err)
+		log.Panic("Ошибка, нет катой переменной окужения: ", err)
 	}
 
 	bot.Debug = true
