@@ -48,7 +48,7 @@ jobs:
             docker stop go_currency_bot && \
             docker rm go_currency_bot
             
-            sleep 5
+            sleep 10
             
             docker pull ivan556/currency_golang_bot &&\
             docker run --name go_currency_bot --restart=on-failure -d ivan556/currency_golang_bot
