@@ -6,16 +6,16 @@ import (
 	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"github.com/joho/godotenv"
 )
 
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-	  log.Fatal("Error loading .env file")
+		log.Fatal("Error loading .env file")
 	}
 	token := os.Getenv("TELEGRAM_APITOKEN")
 	bot, err := tgbotapi.NewBotAPI(token)
@@ -34,12 +34,12 @@ func main() {
 	createTable(db, &FiatCurrency{})
 
 	if isFiatTableEmpty(db) {
-		parseJsonIntoTable(db, URL)
+		parseJsonIntoTable(db, URL_TO_JSON_FIAT)
 	}
 	// запускаем cron задачу, которая выполняется каждую полночь
 	c := cron.New()
 	c.AddFunc("0 0 0 * * *", func() {
-		parseJsonIntoTable(db, URL)
+		parseJsonIntoTable(db, URL_TO_JSON_FIAT)
 	})
 
 	updateConfig := tgbotapi.NewUpdate(-1)
@@ -86,7 +86,6 @@ func main() {
 			event = ""
 		}
 
-
 		user_text := update.Message.Text
 		if userFSM.FSM.Current() == "choiceOperation" {
 
@@ -99,12 +98,12 @@ func main() {
 				event = "firstCyrrency"
 				msg.Text = "Выберите первую валюту"
 			} else {
-				msg.Text = "Ошибка, такой операции не существует, попробуйте снова"
+				msg.Text = INCORRECT_OPERATION
 			}
 		} else if userFSM.FSM.Current() == "choiceOneCurrency" {
 			fiatCurrency, err := selectFiatFromTable(db, user_text)
 			if err != nil {
-				msg.Text, event = "Возникла непредвиденная ошибка, попробуйте снова, либо отправьте /cancel", ""
+				msg.Text, event = ERROR_MESSAGE, ""
 				bot.Send(msg)
 				continue
 			}
@@ -119,7 +118,7 @@ func main() {
 		} else if userFSM.FSM.Current() == "choiceFirstCurrency" {
 			fiatCurrency, err := selectFiatFromTable(db, user_text)
 			if err != nil {
-				msg.Text, event = "Возникла непредвиденная ошибка, попробуйте снова, либо отправьте /cancel", ""
+				msg.Text, event = ERROR_MESSAGE, ""
 				bot.Send(msg)
 				continue
 			}
@@ -135,7 +134,7 @@ func main() {
 		} else if userFSM.FSM.Current() == "choiceSecondCurrency" {
 			fiatCurrency, err := selectFiatFromTable(db, user_text)
 			if err != nil {
-				msg.Text, event = "Возникла непредвиденная ошибка, попробуйте снова, либо отправьте /cancel", ""
+				msg.Text, event = ERROR_MESSAGE, ""
 				bot.Send(msg)
 				continue
 			}
@@ -152,30 +151,30 @@ func main() {
 		} else if userFSM.FSM.Current() == "choiceAmount" {
 			amount, err := strconv.Atoi(user_text)
 			if err != nil {
-				msg.Text, event = "Ошибка, введите целое число или отмените операцию /cancel", ""
+				msg.Text, event = INCORRECT_NUMBER, ""
 			} else {
-				
+
 				fist_fiatCurrency, err := selectFiatFromTable(db, userFSM.UserData["firstCurrencyCode"])
 				if err != nil {
-					msg.Text, event = "Возникла непредвиденная ошибка, попробуйте снова, либо отправьте /cancel", ""
+					msg.Text, event = ERROR_MESSAGE, ""
 					bot.Send(msg)
 					continue
 				}
-				
+
 				second_fiatCurrency, err := selectFiatFromTable(db, userFSM.UserData["secondCurrencyCode"])
 				if err != nil {
-					msg.Text, event = "Возникла непредвиденная ошибка, попробуйте снова, либо отправьте /cancel", ""
+					msg.Text, event = ERROR_MESSAGE, ""
 					bot.Send(msg)
 					continue
 				}
-				
+
 				answer, err := convertFiatCurrency(
 					fist_fiatCurrency,
 					second_fiatCurrency,
 					amount,
 				)
 				if err != nil {
-					msg.Text, event = "Ошибка конвертирования, попробуйте отправить число снова или отмените операцию /cancel", ""
+					msg.Text, event = ERROR_CONVERT, ""
 				} else {
 					msg.Text, event = strconv.Itoa(amount)+" "+userFSM.UserData["firstCurrencyCode"]+" = "+answer+" "+userFSM.UserData["secondCurrencyCode"], "start"
 					bot.Send(msg)

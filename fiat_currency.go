@@ -11,7 +11,6 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-const URL = "https://www.cbr-xml-daily.ru/daily_json.js"
 
 type FiatCurrency struct {
 	gorm.Model
