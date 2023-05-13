@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN  go mod download && go build -o go_bot *.go
+RUN  apk update && apk add build-base && go mod download && go build -o go_bot *.go
 
 FROM alpine
 
