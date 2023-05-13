@@ -18,6 +18,12 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
 
+      - name: Make envfile
+        uses: SpicyPizza/create-envfile@v1.3
+        with:
+          envkey_SECRET_KEY: ${{ secrets.BOT_TOKEN }}
+          file_name: .env
+          
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v2
@@ -29,8 +35,6 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          build-args: |
-            BOT_TOKEN=${{ secrets.BOT_TOKEN }}
           tags: ivan556/currency_golang_bot
 
       - name: deploy

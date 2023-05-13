@@ -4,3 +4,4 @@ Docker*
 .docker*
 LICENSE
 *.json
+*.db

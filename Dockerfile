@@ -12,12 +12,9 @@ WORKDIR /app
 
 RUN apk update
 
-ARG BOT_TOKEN
-ENV TELEGRAM_APITOKEN=$BOT_TOKEN
+RUN adduser --disabled-password --no-create-home john-doe && chown john-doe:john-doe -R /app/
 
-COPY --from=builder /app/go_bot /app
-
-RUN adduser --disabled-password --no-create-home john-doe
+COPY --from=builder /app/.env /app/go_bot /app/
 
 ENTRYPOINT ["./go_bot"]
 
