@@ -42,7 +42,7 @@ func main() {
 		parseJsonIntoTable(db, URL)
 	})
 
-	updateConfig := tgbotapi.NewUpdate(0)
+	updateConfig := tgbotapi.NewUpdate(-1)
 	updateConfig.Timeout = 60
 
 	updates := bot.GetUpdatesChan(updateConfig)
