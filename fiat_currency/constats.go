@@ -1,4 +1,4 @@
-package main
+package fiat_currency
 
 const URL_TO_JSON_FIAT = "https://www.cbr-xml-daily.ru/daily_json.js"
 const ERROR_MESSAGE = "Возникла непредвиденная ошибка, либо вы отправили неверные данные, попробуйте снова или отправьте /cancel"

@@ -22,6 +22,7 @@ jobs:
         uses: SpicyPizza/create-envfile@v1.3
         with:
           envkey_TELEGRAM_APITOKEN: ${{ secrets.BOT_TOKEN }}
+          envkey_DEBUG_BOT: false
           file_name: .env
 
       - name: Set up Docker Buildx

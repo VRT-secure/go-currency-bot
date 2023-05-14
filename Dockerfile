@@ -8,7 +8,7 @@ RUN  apk update && apk add build-base
 
 COPY . .
 
-RUN go mod download && go build -o go_bot *.go
+RUN go mod download && go build -o go_bot main.go
 
 
 FROM alpine

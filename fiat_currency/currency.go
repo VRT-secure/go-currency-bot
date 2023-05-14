@@ -1,4 +1,4 @@
-package main
+package fiat_currency
 
 import (
 	"io"
@@ -9,6 +9,7 @@ import (
 	"github.com/tidwall/gjson"
 	"gorm.io/gorm"
 	"github.com/thoas/go-funk"
+	"kakafoni/database"
 )
 
 
@@ -21,19 +22,16 @@ type FiatCurrency struct {
 	Previous string
 }
 
-func parseJsonIntoTable(db *gorm.DB, url_to_json string) {
+func ParseJsonIntoTable(db *gorm.DB, url_to_json string) error {
 	// Создаем HTTP-запрос для скачивания файла
 	resp, err := http.Get(url_to_json)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer resp.Body.Close()
 
 	// Получаем массив байтов
 	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		panic(err)
-	}
 	json := string(body)
 
 	gjson.Get(json, "Valute").ForEach(func(key, value gjson.Result) bool {
@@ -49,15 +47,16 @@ func parseJsonIntoTable(db *gorm.DB, url_to_json string) {
 		}
 		return true // продолжить итерацию
 	})
+	return err
 }
 
 func insertFiatRecordIntoTable(db *gorm.DB, charCode, nominal, name, value, previous string) error {
 	currency := &FiatCurrency{CharCode: charCode, Nominal: nominal, Name: name, Value: value, Previous: previous}
-	err := InsertIntoDB(db, currency)
+	err := database.InsertIntoDB(db, currency)
 	return err
 }
 
-func selectFiatFromTable(db *gorm.DB, charCode string) (FiatCurrency, error) {
+func SelectFiatFromTable(db *gorm.DB, charCode string) (FiatCurrency, error) {
 	var fiatCurrency FiatCurrency
 	result := db.Last(&fiatCurrency, "char_code = ?", charCode)
 	if result.Error != nil {
@@ -67,13 +66,13 @@ func selectFiatFromTable(db *gorm.DB, charCode string) (FiatCurrency, error) {
 	return fiatCurrency, nil
 }
 
-func isFiatTableEmpty(db *gorm.DB) bool {
+func IsFiatTableEmpty(db *gorm.DB) bool {
 	var count int64
 	db.Model(&FiatCurrency{}).Count(&count)
 	return count == 0
 }
 
-func fiatCharCodes(db *gorm.DB) []string {
+func FiatCharCodes(db *gorm.DB) []string {
 	var fiatCurrency []FiatCurrency
 	location, err := time.LoadLocation("Europe/Moscow")
 	if err != nil {
@@ -94,7 +93,7 @@ func fiatCharCodes(db *gorm.DB) []string {
 	return answer_str
 }
 
-func handleFiatCurrencyChoice(charCodes []string, charCode string, fiatCurrency FiatCurrency, nextEvent string) (string, string) {
+func HandleFiatCurrencyChoice(charCodes []string, charCode string, fiatCurrency FiatCurrency, nextEvent string) (string, string) {
 	if funk.Contains(charCodes, charCode) {
 		answer := "Абревиатура: " + fiatCurrency.CharCode +
 			"\nНоминал: " + fiatCurrency.Nominal +
