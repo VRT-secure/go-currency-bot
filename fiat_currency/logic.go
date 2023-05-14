@@ -10,7 +10,7 @@ import (
 	"github.com/looplab/fsm"
 )
 
-var mainMenuKeyboard = tgbotapi.NewReplyKeyboard(
+var MainMenuKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("Узнать курс валюты"),
 		tgbotapi.NewKeyboardButton("Калькулятор валют"),
@@ -56,7 +56,7 @@ func (u *UserFSM) enterState(e *fsm.Event) {
 	fmt.Printf("User %d entered state %s\n", u.ChatID, e.Dst)
 }
 
-func (u *UserFSM) changeEvent(event string) {
+func (u *UserFSM) ChangeEvent(event string) {
 	if event != "" {
 		err := u.FSM.Event(context.Background(), event)
 		if err != nil {
@@ -65,7 +65,7 @@ func (u *UserFSM) changeEvent(event string) {
 	}
 }
 
-func convertFiatCurrency(fist_fiatCurrency, second_fiatCurrency FiatCurrency, amount int) (string, error) {
+func ConvertFiatCurrency(fist_fiatCurrency, second_fiatCurrency FiatCurrency, amount int) (string, error) {
 	value_fist_currency, err := strconv.ParseFloat(fist_fiatCurrency.Value, 32)
 	if err != nil {
 		return "", err
@@ -91,7 +91,7 @@ func convertFiatCurrency(fist_fiatCurrency, second_fiatCurrency FiatCurrency, am
 	return answer, err
 }
 
-func charCodesKeyboard(charCodes []string) tgbotapi.ReplyKeyboardMarkup {
+func CharCodesKeyboard(charCodes []string) tgbotapi.ReplyKeyboardMarkup {
 	var rows [][]tgbotapi.KeyboardButton
 
 	for i := 0; i < len(charCodes); i += 3 {
@@ -107,6 +107,6 @@ func charCodesKeyboard(charCodes []string) tgbotapi.ReplyKeyboardMarkup {
 	return tgbotapi.NewReplyKeyboard(rows...)
 }
 
-func mainMenu(text string, keyboard tgbotapi.ReplyKeyboardMarkup) (tgbotapi.ReplyKeyboardMarkup, string) {
+func MainMenu(text string, keyboard tgbotapi.ReplyKeyboardMarkup) (tgbotapi.ReplyKeyboardMarkup, string) {
 	return keyboard, text
 }

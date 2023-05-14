@@ -4,11 +4,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func CreateTable(db *gorm.DB, table interface{}) {
+func CreateTable(db *gorm.DB, table interface{}) error {
 	err := db.AutoMigrate(table)
-	if err != nil {
-		panic("failed to migrate database")
-	}
+	return err
 }
 
 func InsertIntoDB(db *gorm.DB, record interface{}) error {
@@ -17,4 +15,9 @@ func InsertIntoDB(db *gorm.DB, record interface{}) error {
 		return result.Error
 	}
 	return nil
+}
+
+func DropTable(db *gorm.DB, table interface{}) error {
+	err := db.Migrator().DropTable(table)
+	return err
 }
