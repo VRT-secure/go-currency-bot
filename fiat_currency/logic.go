@@ -91,14 +91,14 @@ func ConvertFiatCurrency(fist_fiatCurrency, second_fiatCurrency FiatCurrency, am
 	return answer, err
 }
 
-func CharCodesKeyboard(charCodes []string) tgbotapi.ReplyKeyboardMarkup {
+func CharCodesKeyboard(fiatCurrency []FiatCurrency) tgbotapi.ReplyKeyboardMarkup {
 	var rows [][]tgbotapi.KeyboardButton
 
-	for i := 0; i < len(charCodes); i += 3 {
+	for i := 0; i < len(fiatCurrency); i ++ {
 		row := []tgbotapi.KeyboardButton{}
 
-		for j := 0; j < 3 && i+j < len(charCodes); j++ {
-			row = append(row, tgbotapi.NewKeyboardButton(charCodes[i+j]))
+		for j := 0; j < 1 && i+j < len(fiatCurrency); j++ {
+			row = append(row, tgbotapi.NewKeyboardButton(fiatCurrency[i+j].CharCode + fmt.Sprintf(" (%s)", fiatCurrency[i+j].Name)))
 		}
 
 		rows = append(rows, row)

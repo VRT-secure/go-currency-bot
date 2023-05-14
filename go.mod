@@ -8,7 +8,6 @@ require (
 	github.com/looplab/fsm v1.0.1
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/smartystreets/goconvey v1.8.0
-	github.com/thoas/go-funk v0.9.3
 	github.com/tidwall/gjson v1.14.4
 	gorm.io/driver/sqlite v1.5.0
 	gorm.io/gorm v1.25.1

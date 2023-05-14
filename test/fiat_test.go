@@ -28,10 +28,17 @@ func TestSqlite3(t *testing.T) {
 	})
 
 	Convey("Select from FiatCurrency table", t, func() {
-		charCodes := fiat_currency.FiatCharCodes(db)
-		So(charCodes, ShouldNotBeEmpty)
-		_, err := fiat_currency.SelectFiatFromTable(db, charCodes[0])
+		fiatCurrencySlice := fiat_currency.FiatCharCodes(db)
+		So(fiatCurrencySlice, ShouldNotBeEmpty)
+		
+		_, err := fiat_currency.SelectFiatFromTable(db, fiatCurrencySlice[0].CharCode)
 		So(err, ShouldBeNil)
+
+		_, event := fiat_currency.HandleFiatCurrencyChoice(fiatCurrencySlice, 
+			fiatCurrencySlice[0].CharCode,
+			"pupok", 
+		)
+		So(len(event), ShouldNotEqual, 0)
 	})
 
 	Convey("Delete FiatCurrency table", t, func() {

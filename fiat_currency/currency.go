@@ -4,14 +4,14 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
+
+	"kakafoni/database"
 
 	"github.com/tidwall/gjson"
 	"gorm.io/gorm"
-	"github.com/thoas/go-funk"
-	"kakafoni/database"
 )
-
 
 type FiatCurrency struct {
 	gorm.Model
@@ -56,12 +56,17 @@ func insertFiatRecordIntoTable(db *gorm.DB, charCode, nominal, name, value, prev
 	return err
 }
 
-func SelectFiatFromTable(db *gorm.DB, charCode string) (FiatCurrency, error) {
+func SelectFiatFromTable(db *gorm.DB, userText string) (FiatCurrency, error) {
 	var fiatCurrency FiatCurrency
-	result := db.Last(&fiatCurrency, "char_code = ?", charCode)
-	if result.Error != nil {
-		log.Printf("Ошибка чтения фиатной валюты из БД: %v", result.Error)
-		return FiatCurrency{}, result.Error
+	fiatCurrencySlice := FiatCharCodes(db)
+	for _, v := range fiatCurrencySlice {
+		if strings.Contains(userText, v.CharCode) {
+			result := db.Last(&fiatCurrency, "char_code = ?", v.CharCode)
+			if result.Error != nil {
+				log.Printf("Ошибка чтения фиатной валюты из БД: %v", result.Error)
+				return FiatCurrency{}, result.Error
+			}
+		}
 	}
 	return fiatCurrency, nil
 }
@@ -72,7 +77,7 @@ func IsFiatTableEmpty(db *gorm.DB) bool {
 	return count == 0
 }
 
-func FiatCharCodes(db *gorm.DB) []string {
+func FiatCharCodes(db *gorm.DB) []FiatCurrency {
 	var fiatCurrency []FiatCurrency
 	location, err := time.LoadLocation("Europe/Moscow")
 	if err != nil {
@@ -85,22 +90,20 @@ func FiatCharCodes(db *gorm.DB) []string {
 	if result.Error != nil {
 		log.Printf("Ошибка поиска записей фиатных валют в БД по текущей дате: %v", result.Error)
 	}
-	
-	var answer_str []string
-	for _, fiat := range fiatCurrency {
-		answer_str = append(answer_str, fiat.CharCode)
-	}
-	return answer_str
+
+	return fiatCurrency
 }
 
-func HandleFiatCurrencyChoice(charCodes []string, charCode string, fiatCurrency FiatCurrency, nextEvent string) (string, string) {
-	if funk.Contains(charCodes, charCode) {
-		answer := "Абревиатура: " + fiatCurrency.CharCode +
-			"\nНоминал: " + fiatCurrency.Nominal +
-			"\nНазвание: " + fiatCurrency.Name +
-			"\nЦена в рублях на сегодня: " + fiatCurrency.Value +
-			"\nПрошлая цена: " + fiatCurrency.Previous
+func HandleFiatCurrencyChoice(fiatCurrencySlice []FiatCurrency, userText string, nextEvent string) (string, string) {
+	for _, fiat := range fiatCurrencySlice {
+		if strings.Contains(userText, fiat.CharCode) {
+			answer := "Абревиатура: " + fiat.CharCode +
+			"\nНоминал: " + fiat.Nominal +
+			"\nНазвание: " + fiat.Name +
+			"\nЦена в рублях на сегодня: " + fiat.Value +
+			"\nПрошлая цена: " + fiat.Previous
 		return answer, nextEvent
+		}
 	}
 	return "Данная валюта не найдена, отправьте валюту снова или отмените операцию /cancel", ""
 }
