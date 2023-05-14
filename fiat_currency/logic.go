@@ -1,4 +1,4 @@
-package main
+package fiat_currency
 
 import (
 	"context"

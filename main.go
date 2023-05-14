@@ -5,6 +5,9 @@ import (
 	"os"
 	"strconv"
 
+	"kakafoni/database"
+	"kakafoni/fiat_currency"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
@@ -31,15 +34,15 @@ func main() {
 		panic("failed to connect database")
 	}
 
-	createTable(db, &FiatCurrency{})
+	database.CreateTable(db, &currency.FiatCurrency{})
 
-	if isFiatTableEmpty(db) {
-		parseJsonIntoTable(db, URL_TO_JSON_FIAT)
+	if currency.isFiatTableEmpty(db) {
+		currency.parseJsonIntoTable(db, URL_TO_JSON_FIAT)
 	}
 	// запускаем cron задачу, которая выполняется каждую полночь
 	c := cron.New()
 	c.AddFunc("0 0 0 * * *", func() {
-		parseJsonIntoTable(db, URL_TO_JSON_FIAT)
+		fiat_currency.parseJsonIntoTable(db, URL_TO_JSON_FIAT)
 	})
 
 	updateConfig := tgbotapi.NewUpdate(-1)
@@ -48,7 +51,7 @@ func main() {
 	updates := bot.GetUpdatesChan(updateConfig)
 
 	// машина состояний
-	userFSMs := make(map[int64]*UserFSM)
+	userFSMs := make(map[int64]*fiat_currency.UserFSM)
 
 	charCodes := fiatCharCodes(db)
 

@@ -1,4 +1,4 @@
-package main
+package fiat_currency
 
 import (
 	"io"
@@ -9,6 +9,7 @@ import (
 	"github.com/tidwall/gjson"
 	"gorm.io/gorm"
 	"github.com/thoas/go-funk"
+	"kakafoni/database"
 )
 
 
@@ -53,7 +54,7 @@ func parseJsonIntoTable(db *gorm.DB, url_to_json string) {
 
 func insertFiatRecordIntoTable(db *gorm.DB, charCode, nominal, name, value, previous string) error {
 	currency := &FiatCurrency{CharCode: charCode, Nominal: nominal, Name: name, Value: value, Previous: previous}
-	err := InsertIntoDB(db, currency)
+	err := database.InsertIntoDB(db, currency)
 	return err
 }
 
