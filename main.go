@@ -25,13 +25,12 @@ func main() {
 	if err != nil {
 		log.Panic("Ошибка, нет катой переменной окужения: ", err)
 	}
-	
+
 	debug_bot := os.Getenv("DEBUG_BOT")
 	bot.Debug, err = strconv.ParseBool(debug_bot)
 	if err != nil {
 		log.Panic("Ошибка, нет катой переменной окужения: ", err)
 	}
-
 
 	// создаём или открываем файл БД
 	db, err := gorm.Open(sqlite.Open("currencyes.db"), &gorm.Config{})
@@ -47,11 +46,14 @@ func main() {
 	if fiat_currency.IsFiatTableEmpty(db) {
 		fiat_currency.ParseJsonIntoTable(db, fiat_currency.URL_TO_JSON_FIAT)
 	}
+
 	// запускаем cron задачу, которая выполняется каждую полночь
 	c := cron.New()
 	c.AddFunc("0 0 0 * * *", func() {
 		fiat_currency.ParseJsonIntoTable(db, fiat_currency.URL_TO_JSON_FIAT)
+		log.Printf("\nСработал крон\n")
 	})
+	c.Start()
 
 	updateConfig := tgbotapi.NewUpdate(-1)
 	updateConfig.Timeout = 60
