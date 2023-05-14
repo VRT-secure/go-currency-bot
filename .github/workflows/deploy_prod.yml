@@ -45,12 +45,10 @@ jobs:
           username: rostom
           key: ${{ secrets.SSH_PRYVATE_KEY }}
           script: |
-            docker rmi ivan556/currency_golang_bot && \
-            docker stop go_currency_bot && \
-            docker rm go_currency_bot
-            
-            sleep 10
-            
+            docker rmi ivan556/currency_golang_bot || true && \
+            docker stop go_currency_bot || true && \
+            docker rm go_currency_bot || true && \
             docker pull ivan556/currency_golang_bot &&\
             docker run --name go_currency_bot --restart=on-failure -d ivan556/currency_golang_bot
+
 
