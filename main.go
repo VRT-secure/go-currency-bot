@@ -35,16 +35,17 @@ func main() {
 	// создаём или открываем файл БД
 	db, err := gorm.Open(sqlite.Open("currencyes.db"), &gorm.Config{})
 	if err != nil {
-		panic("failed to connect database")
+		log.Panic("failed to connect database")
 	}
 
 	err = database.CreateTable(db, &fiat_currency.FiatCurrency{})
 	if err != nil {
-		panic("failed to migrate database")
+		log.Panic("failed to migrate database")
 	}
 
 	if fiat_currency.IsFiatTableEmpty(db) {
 		fiat_currency.ParseJsonIntoTable(db, fiat_currency.URL_TO_JSON_FIAT)
+		log.Printf("\nТаблица fiat_currency была пустой\n")
 	}
 
 	// запускаем cron задачу, которая выполняется каждую полночь
@@ -63,7 +64,7 @@ func main() {
 	// машина состояний
 	userFSMs := make(map[int64]*fiat_currency.UserFSM)
 
-	charCodes := fiat_currency.FiatCharCodes(db)
+	fiatCurrencySlice := fiat_currency.FiatCharCodes(db)
 
 	for update := range updates {
 		if update.Message == nil {
@@ -103,24 +104,24 @@ func main() {
 		if userFSM.FSM.Current() == "choiceOperation" {
 
 			if user_text == "Узнать курс валюты" {
-				msg.ReplyMarkup = fiat_currency.CharCodesKeyboard(charCodes)
+				msg.ReplyMarkup = fiat_currency.CharCodesKeyboard(fiatCurrencySlice)
 				event = "courseCurrency"
 				msg.Text = "Выберите валюту"
 			} else if user_text == "Калькулятор валют" {
-				msg.ReplyMarkup = fiat_currency.CharCodesKeyboard(charCodes)
+				msg.ReplyMarkup = fiat_currency.CharCodesKeyboard(fiatCurrencySlice)
 				event = "firstCyrrency"
 				msg.Text = "Выберите первую валюту"
 			} else {
 				msg.Text = fiat_currency.INCORRECT_OPERATION
 			}
 		} else if userFSM.FSM.Current() == "choiceOneCurrency" {
-			fiatCurrency, err := fiat_currency.SelectFiatFromTable(db, user_text)
+			_, err := fiat_currency.SelectFiatFromTable(db, user_text)
 			if err != nil {
 				msg.Text, event = fiat_currency.ERROR_MESSAGE, ""
 				bot.Send(msg)
 				continue
 			}
-			msg.Text, event = fiat_currency.HandleFiatCurrencyChoice(charCodes, user_text, fiatCurrency, "start")
+			msg.Text, event = fiat_currency.HandleFiatCurrencyChoice(fiatCurrencySlice, user_text, "start")
 			bot.Send(msg)
 			if event == "" {
 				continue
@@ -129,13 +130,13 @@ func main() {
 			msg.ReplyMarkup, msg.Text = fiat_currency.MainMenu("Выберите операцию", fiat_currency.MainMenuKeyboard)
 
 		} else if userFSM.FSM.Current() == "choiceFirstCurrency" {
-			fiatCurrency, err := fiat_currency.SelectFiatFromTable(db, user_text)
+			_, err := fiat_currency.SelectFiatFromTable(db, user_text)
 			if err != nil {
 				msg.Text, event = fiat_currency.ERROR_MESSAGE, ""
 				bot.Send(msg)
 				continue
 			}
-			msg.Text, event = fiat_currency.HandleFiatCurrencyChoice(charCodes, user_text, fiatCurrency, "secondCyrrency")
+			msg.Text, event = fiat_currency.HandleFiatCurrencyChoice(fiatCurrencySlice, user_text, "secondCyrrency")
 			bot.Send(msg)
 			if event == "" {
 				continue
@@ -145,13 +146,13 @@ func main() {
 			msg.Text = "Выберите вторую валюту"
 
 		} else if userFSM.FSM.Current() == "choiceSecondCurrency" {
-			fiatCurrency, err := fiat_currency.SelectFiatFromTable(db, user_text)
+			_, err := fiat_currency.SelectFiatFromTable(db, user_text)
 			if err != nil {
 				msg.Text, event = fiat_currency.ERROR_MESSAGE, ""
 				bot.Send(msg)
 				continue
 			}
-			msg.Text, event = fiat_currency.HandleFiatCurrencyChoice(charCodes, user_text, fiatCurrency, "amount")
+			msg.Text, event = fiat_currency.HandleFiatCurrencyChoice(fiatCurrencySlice, user_text, "amount")
 			bot.Send(msg)
 			if event == "" {
 				continue
