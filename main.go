@@ -7,6 +7,8 @@ import (
 
 	"kakafoni/database"
 	"kakafoni/fiat_currency"
+	"kakafoni/gold_price"
+	"kakafoni/logic"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
@@ -43,7 +45,7 @@ func main() {
 		log.Panic("failed to migrate database")
 	}
 
-	if fiat_currency.IsFiatTableEmpty(db) {
+	if fiat_currency.IsTableEmpty(db) {
 		fiat_currency.ParseJsonIntoTable(db, fiat_currency.URL_TO_JSON_FIAT)
 		log.Printf("\nТаблица fiat_currency была пустой\n")
 	}
@@ -62,9 +64,9 @@ func main() {
 	updates := bot.GetUpdatesChan(updateConfig)
 
 	// машина состояний
-	userFSMs := make(map[int64]*fiat_currency.UserFSM)
+	userFSMs := make(map[int64]*logic.UserFSM)
 
-	fiatCurrencySlice := fiat_currency.FiatCharCodes(db)
+	fiatCurrencySlice := fiat_currency.CharCodes(db)
 
 	for update := range updates {
 		if update.Message == nil {
@@ -75,7 +77,7 @@ func main() {
 
 		userFSM, ok := userFSMs[chatID]
 		if !ok {
-			userFSM = fiat_currency.NewUserFSM(chatID)
+			userFSM = logic.NewUserFSM(chatID)
 			userFSMs[chatID] = userFSM
 		}
 
@@ -83,17 +85,17 @@ func main() {
 
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 		switch update.Message.Command() {
-		case "start":
-			event = "start"
-			msg.ReplyMarkup, msg.Text = fiat_currency.MainMenu("Выберите операцию", fiat_currency.MainMenuKeyboard)
+		case logic.Start:
+			event = logic.Start
+			msg.ReplyMarkup, msg.Text = logic.MainMenu("Выберите операцию", logic.MainMenuKeyboard)
 		case "help":
 			msg.Text = "Бот для конвертирования валют. Если хотите венруться в меню выбора операций отправьте /cancel"
 			bot.Send(msg)
 			continue
 		case "cancel":
-			event = "start"
+			event = logic.Start
 			userFSM.ChangeEvent(event)
-			msg.ReplyMarkup, msg.Text = fiat_currency.MainMenu("Отмена операции", fiat_currency.MainMenuKeyboard)
+			msg.ReplyMarkup, msg.Text = logic.MainMenu("Отмена операции", logic.MainMenuKeyboard)
 			bot.Send(msg)
 			continue
 		default:
@@ -101,42 +103,45 @@ func main() {
 		}
 
 		user_text := update.Message.Text
-		if userFSM.FSM.Current() == "choiceOperation" {
-
-			if user_text == "Узнать курс валюты" {
+		switch userFSM.FSM.Current() {
+		case logic.ChoiceOperation:
+			switch user_text {
+			case logic.MainMenuKeyboard_fiatCurrency:
 				msg.ReplyMarkup = fiat_currency.CharCodesKeyboard(fiatCurrencySlice)
-				event = "courseCurrency"
+				event = logic.CourseFiatCurrency
 				msg.Text = "Выберите валюту"
-			} else if user_text == "Калькулятор валют" {
+			case logic.MainMenuKeyboard_calculateFiatCyrrencyes:
 				msg.ReplyMarkup = fiat_currency.CharCodesKeyboard(fiatCurrencySlice)
-				event = "firstCyrrency"
+				event = logic.FirstFiatCyrrency
 				msg.Text = "Выберите первую валюту"
-			} else {
+			case logic.MainMenuKeyboard_goldMakhachkala:
+				msg.ReplyMarkup = fiat_currency.CharCodesKeyboard(fiatCurrencySlice)
+				event = logic.GoldMakhachkala
+				msg.Text = "Цена золота в Махачкале"
+			default:
 				msg.Text = fiat_currency.INCORRECT_OPERATION
 			}
-		} else if userFSM.FSM.Current() == "choiceOneCurrency" {
-			_, err := fiat_currency.SelectFiatFromTable(db, user_text)
+		case logic.ChoiceOneFiatCurrency:
+			_, err := fiat_currency.SelectFromTable(db, user_text)
 			if err != nil {
 				msg.Text, event = fiat_currency.ERROR_MESSAGE, ""
 				bot.Send(msg)
 				continue
 			}
-			msg.Text, event = fiat_currency.HandleFiatCurrencyChoice(fiatCurrencySlice, user_text, "start")
+			msg.Text, event = fiat_currency.HandleCurrencyChoice(fiatCurrencySlice, user_text, logic.Start)
 			bot.Send(msg)
 			if event == "" {
 				continue
 			}
-
-			msg.ReplyMarkup, msg.Text = fiat_currency.MainMenu("Выберите операцию", fiat_currency.MainMenuKeyboard)
-
-		} else if userFSM.FSM.Current() == "choiceFirstCurrency" {
-			_, err := fiat_currency.SelectFiatFromTable(db, user_text)
+			msg.ReplyMarkup, msg.Text = logic.MainMenu("Выберите операцию", logic.MainMenuKeyboard)
+		case logic.ChoiceFirstFiatCurrency:
+			_, err := fiat_currency.SelectFromTable(db, user_text)
 			if err != nil {
 				msg.Text, event = fiat_currency.ERROR_MESSAGE, ""
 				bot.Send(msg)
 				continue
 			}
-			msg.Text, event = fiat_currency.HandleFiatCurrencyChoice(fiatCurrencySlice, user_text, "secondCyrrency")
+			msg.Text, event = fiat_currency.HandleCurrencyChoice(fiatCurrencySlice, user_text, logic.SecondFiatCyrrency)
 			bot.Send(msg)
 			if event == "" {
 				continue
@@ -144,15 +149,14 @@ func main() {
 
 			userFSM.UserData["firstCurrencyCode"] = user_text
 			msg.Text = "Выберите вторую валюту"
-
-		} else if userFSM.FSM.Current() == "choiceSecondCurrency" {
-			_, err := fiat_currency.SelectFiatFromTable(db, user_text)
+		case logic.ChoiceSecondFiatCurrency:
+			_, err := fiat_currency.SelectFromTable(db, user_text)
 			if err != nil {
 				msg.Text, event = fiat_currency.ERROR_MESSAGE, ""
 				bot.Send(msg)
 				continue
 			}
-			msg.Text, event = fiat_currency.HandleFiatCurrencyChoice(fiatCurrencySlice, user_text, "amount")
+			msg.Text, event = fiat_currency.HandleCurrencyChoice(fiatCurrencySlice, user_text, logic.FiatAmount)
 			bot.Send(msg)
 			if event == "" {
 				continue
@@ -161,28 +165,27 @@ func main() {
 			userFSM.UserData["secondCurrencyCode"] = user_text
 			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 			msg.Text = "Введите количество целым числом"
-
-		} else if userFSM.FSM.Current() == "choiceAmount" {
+		case logic.ChoiceFiatAmount:
 			amount, err := strconv.Atoi(user_text)
 			if err != nil {
 				msg.Text, event = fiat_currency.INCORRECT_NUMBER, ""
 			} else {
 
-				fist_fiatCurrency, err := fiat_currency.SelectFiatFromTable(db, userFSM.UserData["firstCurrencyCode"])
+				fist_fiatCurrency, err := fiat_currency.SelectFromTable(db, userFSM.UserData["firstCurrencyCode"])
 				if err != nil {
 					msg.Text, event = fiat_currency.ERROR_MESSAGE, ""
 					bot.Send(msg)
 					continue
 				}
 
-				second_fiatCurrency, err := fiat_currency.SelectFiatFromTable(db, userFSM.UserData["secondCurrencyCode"])
+				second_fiatCurrency, err := fiat_currency.SelectFromTable(db, userFSM.UserData["secondCurrencyCode"])
 				if err != nil {
 					msg.Text, event = fiat_currency.ERROR_MESSAGE, ""
 					bot.Send(msg)
 					continue
 				}
 
-				answer, err := fiat_currency.ConvertFiatCurrency(
+				answer, err := fiat_currency.ConvertCurrency(
 					fist_fiatCurrency,
 					second_fiatCurrency,
 					amount,
@@ -190,11 +193,15 @@ func main() {
 				if err != nil {
 					msg.Text, event = fiat_currency.ERROR_CONVERT, ""
 				} else {
-					msg.Text, event = strconv.Itoa(amount)+" "+userFSM.UserData["firstCurrencyCode"]+" = "+answer+" "+userFSM.UserData["secondCurrencyCode"], "start"
+					msg.Text, event = strconv.Itoa(amount)+" "+userFSM.UserData["firstCurrencyCode"]+" = "+answer+" "+userFSM.UserData["secondCurrencyCode"], logic.Start
 					bot.Send(msg)
-					msg.ReplyMarkup, msg.Text = fiat_currency.MainMenu("Выберите операцию", fiat_currency.MainMenuKeyboard)
+					msg.ReplyMarkup, msg.Text = logic.MainMenu("Выберите операцию", logic.MainMenuKeyboard)
 				}
 			}
+		case logic.ChoiceGoldMakhachkala:
+			// TODO закончить с ценами золота в Махачкале
+			err = gold_price.Parse_gold_prise_makhachkala(db)
+			event = logic.Start
 		}
 
 		userFSM.ChangeEvent(event)

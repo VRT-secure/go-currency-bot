@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func TestSqlite3(t *testing.T) {
+func TestSqlite3Fiat(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	Convey("Creating database file", t, func() {
 		So(err, ShouldBeNil)
@@ -28,15 +28,15 @@ func TestSqlite3(t *testing.T) {
 	})
 
 	Convey("Select from FiatCurrency table", t, func() {
-		fiatCurrencySlice := fiat_currency.FiatCharCodes(db)
+		fiatCurrencySlice := fiat_currency.CharCodes(db)
 		So(fiatCurrencySlice, ShouldNotBeEmpty)
-		
-		_, err := fiat_currency.SelectFiatFromTable(db, fiatCurrencySlice[0].CharCode)
+
+		_, err := fiat_currency.SelectFromTable(db, fiatCurrencySlice[0].CharCode)
 		So(err, ShouldBeNil)
 
-		_, event := fiat_currency.HandleFiatCurrencyChoice(fiatCurrencySlice, 
+		_, event := fiat_currency.HandleCurrencyChoice(fiatCurrencySlice,
 			fiatCurrencySlice[0].CharCode,
-			"pupok", 
+			"pupok",
 		)
 		So(len(event), ShouldNotEqual, 0)
 	})
