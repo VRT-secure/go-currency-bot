@@ -37,6 +37,9 @@ func ParseGoldPriseMakhachkala(db *gorm.DB) error {
 			}
 		})
 		if i == 4 {
+			if answer[0] == "" {
+				continue
+			}
 			err = insertRecordIntoTable(db, answer[0], answer[1], answer[2])
 			if err != nil {
 				log.Printf("Ошибка встаски цены золота в БД: %s", err)
