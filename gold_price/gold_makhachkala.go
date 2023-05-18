@@ -18,10 +18,10 @@ type GoldPriceMakhachkala struct {
 	PriceUpTo   string
 }
 
-// TODO выяснить почему в таблицу записывается только последняя проба~
 func ParseGoldPriseMakhachkala(db *gorm.DB) error {
 	c := colly.NewCollector()
 
+	var err error = nil
 	answer := make([]string, 3)
 	for i := 2; i <= 4; i++ {
 		i := i // Создаем новую переменную i для каждой итерации, ибо у нас замыкание.
@@ -36,6 +36,13 @@ func ParseGoldPriseMakhachkala(db *gorm.DB) error {
 				answer[2] = text
 			}
 		})
+		if i == 4 {
+			err = insertRecordIntoTable(db, answer[0], answer[1], answer[2])
+			if err != nil {
+				log.Printf("Ошибка встаски цены золота в БД: %s", err)
+				return err
+			}
+		}
 	}
 
 	// Начать скрапинг
@@ -43,14 +50,6 @@ func ParseGoldPriseMakhachkala(db *gorm.DB) error {
 		c.Visit(url)
 	}
 
-	var err error = nil
-	for i := 0; i < len(answer); i += 3 {
-		err = insertRecordIntoTable(db, answer[i], answer[i+1], answer[i+2])
-		if err != nil {
-			log.Printf("Ошибка встаски цены золота в БД: %s", err)
-			return err
-		}
-	}
 	return err
 }
 
