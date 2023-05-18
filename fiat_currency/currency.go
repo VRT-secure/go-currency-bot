@@ -97,7 +97,7 @@ func CharCodes(db *gorm.DB) []FiatCurrency {
 	return fiatCurrency
 }
 
-func HandleCurrencyChoice(fiatCurrencySlice []FiatCurrency, userText string, nextEvent string) (string, string) {
+func HandleChoice(fiatCurrencySlice []FiatCurrency, userText string, nextEvent string) (string, string) {
 	for _, fiat := range fiatCurrencySlice {
 		if strings.Contains(userText, fiat.CharCode) {
 			answer := "Абревиатура: " + fiat.CharCode +

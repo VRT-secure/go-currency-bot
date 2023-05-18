@@ -17,3 +17,6 @@ const GoldMakhachkala = "goldMakhachkala"
 const ChoiceGoldMakhachkala = "choiceGoldMakhachkala"
 const GoldRussia = "goldRussia"
 const ChoiceGoldRussia = "choiceGoldRussia"
+
+
+const ERROR_MESSAGE = "Возникла непредвиденная ошибка, либо вы отправили неверные данные, попробуйте снова или отправьте /cancel"

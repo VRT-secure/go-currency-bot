@@ -10,3 +10,4 @@ var gold_url_with_probes_mackhachkala = []string{
 	"https://zaim.com/zaemshchikam/cena-zolota-za-gramm/makhachkala/?gold=900",
 	"https://zaim.com/zaemshchikam/cena-zolota-za-gramm/makhachkala/?gold=958",
 }
+

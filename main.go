@@ -42,18 +42,28 @@ func main() {
 
 	err = database.CreateTable(db, &fiat_currency.FiatCurrency{})
 	if err != nil {
-		log.Panic("failed to migrate database")
+		log.Panic("failed to migrate database", err)
+	}
+
+	err = database.CreateTable(db, &gold_price.GoldPriceMakhachkala{})
+	if err != nil {
+		log.Panic("failed to migrate database", err)
 	}
 
 	if fiat_currency.IsTableEmpty(db) {
 		fiat_currency.ParseJsonIntoTable(db, fiat_currency.URL_TO_JSON_FIAT)
 		log.Printf("\nТаблица fiat_currency была пустой\n")
 	}
+	if gold_price.IsTableEmpty(db) {
+		gold_price.ParseGoldPriseMakhachkala(db)
+		log.Printf("\nТаблица gold_price_makhachkala была пустой\n")
+	}
 
 	// запускаем cron задачу, которая выполняется каждую полночь
 	c := cron.New()
 	c.AddFunc("0 0 0 * * *", func() {
 		fiat_currency.ParseJsonIntoTable(db, fiat_currency.URL_TO_JSON_FIAT)
+		gold_price.ParseGoldPriseMakhachkala(db)
 		log.Printf("\nСработал крон\n")
 	})
 	c.Start()
@@ -115,20 +125,23 @@ func main() {
 				event = logic.FirstFiatCyrrency
 				msg.Text = "Выберите первую валюту"
 			case logic.MainMenuKeyboard_goldMakhachkala:
-				msg.ReplyMarkup = fiat_currency.CharCodesKeyboard(fiatCurrencySlice)
-				event = logic.GoldMakhachkala
 				msg.Text = "Цена золота в Махачкале"
+				msg.Text, event = gold_price.HandleChoice(db, logic.Start)
+				bot.Send(msg)
+				if event == "" {
+					continue
+				}
 			default:
 				msg.Text = fiat_currency.INCORRECT_OPERATION
 			}
 		case logic.ChoiceOneFiatCurrency:
 			_, err := fiat_currency.SelectFromTable(db, user_text)
 			if err != nil {
-				msg.Text, event = fiat_currency.ERROR_MESSAGE, ""
+				msg.Text, event = logic.ERROR_MESSAGE, ""
 				bot.Send(msg)
 				continue
 			}
-			msg.Text, event = fiat_currency.HandleCurrencyChoice(fiatCurrencySlice, user_text, logic.Start)
+			msg.Text, event = fiat_currency.HandleChoice(fiatCurrencySlice, user_text, logic.Start)
 			bot.Send(msg)
 			if event == "" {
 				continue
@@ -137,11 +150,11 @@ func main() {
 		case logic.ChoiceFirstFiatCurrency:
 			_, err := fiat_currency.SelectFromTable(db, user_text)
 			if err != nil {
-				msg.Text, event = fiat_currency.ERROR_MESSAGE, ""
+				msg.Text, event = logic.ERROR_MESSAGE, ""
 				bot.Send(msg)
 				continue
 			}
-			msg.Text, event = fiat_currency.HandleCurrencyChoice(fiatCurrencySlice, user_text, logic.SecondFiatCyrrency)
+			msg.Text, event = fiat_currency.HandleChoice(fiatCurrencySlice, user_text, logic.SecondFiatCyrrency)
 			bot.Send(msg)
 			if event == "" {
 				continue
@@ -152,11 +165,11 @@ func main() {
 		case logic.ChoiceSecondFiatCurrency:
 			_, err := fiat_currency.SelectFromTable(db, user_text)
 			if err != nil {
-				msg.Text, event = fiat_currency.ERROR_MESSAGE, ""
+				msg.Text, event = logic.ERROR_MESSAGE, ""
 				bot.Send(msg)
 				continue
 			}
-			msg.Text, event = fiat_currency.HandleCurrencyChoice(fiatCurrencySlice, user_text, logic.FiatAmount)
+			msg.Text, event = fiat_currency.HandleChoice(fiatCurrencySlice, user_text, logic.FiatAmount)
 			bot.Send(msg)
 			if event == "" {
 				continue
@@ -173,14 +186,14 @@ func main() {
 
 				fist_fiatCurrency, err := fiat_currency.SelectFromTable(db, userFSM.UserData["firstCurrencyCode"])
 				if err != nil {
-					msg.Text, event = fiat_currency.ERROR_MESSAGE, ""
+					msg.Text, event = logic.ERROR_MESSAGE, ""
 					bot.Send(msg)
 					continue
 				}
 
 				second_fiatCurrency, err := fiat_currency.SelectFromTable(db, userFSM.UserData["secondCurrencyCode"])
 				if err != nil {
-					msg.Text, event = fiat_currency.ERROR_MESSAGE, ""
+					msg.Text, event = logic.ERROR_MESSAGE, ""
 					bot.Send(msg)
 					continue
 				}
@@ -198,10 +211,6 @@ func main() {
 					msg.ReplyMarkup, msg.Text = logic.MainMenu("Выберите операцию", logic.MainMenuKeyboard)
 				}
 			}
-		case logic.ChoiceGoldMakhachkala:
-			// TODO закончить с ценами золота в Махачкале
-			err = gold_price.Parse_gold_prise_makhachkala(db)
-			event = logic.Start
 		}
 
 		userFSM.ChangeEvent(event)

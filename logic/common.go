@@ -13,6 +13,8 @@ var MainMenuKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(MainMenuKeyboard_fiatCurrency),
 		tgbotapi.NewKeyboardButton(MainMenuKeyboard_calculateFiatCyrrencyes),
+	),
+	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(MainMenuKeyboard_goldMakhachkala),
 	),
 )

@@ -5,6 +5,7 @@ import (
 	"kakafoni/database"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/gocolly/colly"
 	"gorm.io/gorm"
@@ -17,7 +18,8 @@ type GoldPriceMakhachkala struct {
 	PriceUpTo   string
 }
 
-func Parse_gold_prise_makhachkala(db *gorm.DB) error {
+// TODO выяснить почему в таблицу записывается только последняя проба~
+func ParseGoldPriseMakhachkala(db *gorm.DB) error {
 	c := colly.NewCollector()
 
 	answer := make([]string, 3)
@@ -40,7 +42,15 @@ func Parse_gold_prise_makhachkala(db *gorm.DB) error {
 	for _, url := range gold_url_with_probes_mackhachkala {
 		c.Visit(url)
 	}
-	err := insertRecordIntoTable(db, answer[0], answer[1], answer[2])
+
+	var err error = nil
+	for i := 0; i < len(answer); i += 3 {
+		err = insertRecordIntoTable(db, answer[i], answer[i+1], answer[i+2])
+		if err != nil {
+			log.Printf("Ошибка встаски цены золота в БД: %s", err)
+			return err
+		}
+	}
 	return err
 }
 
@@ -50,18 +60,39 @@ func insertRecordIntoTable(db *gorm.DB, goldContent, priceFrom, priceUpTo string
 	return err
 }
 
-func SelectFromTable(db *gorm.DB, userText string) (GoldPriceMakhachkala, error) {
-	var goldPrice GoldPriceMakhachkala
-	result := db.Last(&goldPrice)
-	if result.Error != nil {
-		log.Printf("Ошибка чтения фиатной валюты из БД: %v", result.Error)
-		return GoldPriceMakhachkala{}, result.Error
+func selectFromTable(db *gorm.DB) ([]GoldPriceMakhachkala, error) {
+	var goldPriceMakhachkala []GoldPriceMakhachkala
+	location, err := time.LoadLocation("Europe/Moscow")
+	if err != nil {
+		log.Printf("Ошибка установки московского часового пояса для поиска: %v", err)
 	}
-	return goldPrice, nil
+	now := time.Now().In(location)
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, location)
+	endOfDay := startOfDay.Add(24 * time.Hour)
+	result := db.Where("created_at >= ? AND created_at < ?", startOfDay, endOfDay).Find(&goldPriceMakhachkala)
+	if result.Error != nil {
+		log.Printf("Ошибка поиска записей в БД по текущей дате: %v", result.Error)
+	}
+
+	return goldPriceMakhachkala, result.Error
 }
 
 func IsTableEmpty(db *gorm.DB) bool {
 	var count int64
 	db.Model(&GoldPriceMakhachkala{}).Count(&count)
 	return count == 0
+}
+
+func HandleChoice(db *gorm.DB, nextEvent string) (string, string) {
+	goldPriceSlice, err := selectFromTable(db)
+	if err != nil {
+		return "Ошибка операции, отправьте команду снова или отмените операцию /cancel", ""
+	}
+	answer := ""
+	for _, gold := range goldPriceSlice {
+		answer += fmt.Sprintf("Проба %s", gold.GoldContent)
+		answer += fmt.Sprintf("Цена от %s", gold.PriceFrom)
+		answer += fmt.Sprintf("Цена до %s", gold.PriceUpTo)
+	}
+	return answer, nextEvent
 }
