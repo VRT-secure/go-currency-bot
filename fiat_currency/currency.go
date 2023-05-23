@@ -1,14 +1,17 @@
 package fiat_currency
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"kakafoni/database"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/tidwall/gjson"
 	"gorm.io/gorm"
 )
@@ -56,9 +59,9 @@ func insertFiatRecordIntoTable(db *gorm.DB, charCode, nominal, name, value, prev
 	return err
 }
 
-func SelectFiatFromTable(db *gorm.DB, userText string) (FiatCurrency, error) {
+func SelectFromTable(db *gorm.DB, userText string) (FiatCurrency, error) {
 	var fiatCurrency FiatCurrency
-	fiatCurrencySlice := FiatCharCodes(db)
+	fiatCurrencySlice := CharCodes(db)
 	for _, v := range fiatCurrencySlice {
 		if strings.Contains(userText, v.CharCode) {
 			result := db.Last(&fiatCurrency, "char_code = ?", v.CharCode)
@@ -71,13 +74,13 @@ func SelectFiatFromTable(db *gorm.DB, userText string) (FiatCurrency, error) {
 	return fiatCurrency, nil
 }
 
-func IsFiatTableEmpty(db *gorm.DB) bool {
+func IsTableEmpty(db *gorm.DB) bool {
 	var count int64
 	db.Model(&FiatCurrency{}).Count(&count)
 	return count == 0
 }
 
-func FiatCharCodes(db *gorm.DB) []FiatCurrency {
+func CharCodes(db *gorm.DB) []FiatCurrency {
 	var fiatCurrency []FiatCurrency
 	location, err := time.LoadLocation("Europe/Moscow")
 	if err != nil {
@@ -94,16 +97,58 @@ func FiatCharCodes(db *gorm.DB) []FiatCurrency {
 	return fiatCurrency
 }
 
-func HandleFiatCurrencyChoice(fiatCurrencySlice []FiatCurrency, userText string, nextEvent string) (string, string) {
+func HandleChoice(fiatCurrencySlice []FiatCurrency, userText string, nextEvent string) (string, string) {
 	for _, fiat := range fiatCurrencySlice {
 		if strings.Contains(userText, fiat.CharCode) {
 			answer := "Абревиатура: " + fiat.CharCode +
-			"\nНоминал: " + fiat.Nominal +
-			"\nНазвание: " + fiat.Name +
-			"\nЦена в рублях на сегодня: " + fiat.Value +
-			"\nПрошлая цена: " + fiat.Previous
-		return answer, nextEvent
+				"\nНоминал: " + fiat.Nominal +
+				"\nНазвание: " + fiat.Name +
+				"\nЦена в рублях на сегодня: " + fiat.Value +
+				"\nПрошлая цена: " + fiat.Previous
+			return answer, nextEvent
 		}
 	}
 	return "Данная валюта не найдена, отправьте валюту снова или отмените операцию /cancel", ""
+}
+
+func ConvertCurrency(fist_fiatCurrency, second_fiatCurrency FiatCurrency, amount int) (string, error) {
+	value_fist_currency, err := strconv.ParseFloat(fist_fiatCurrency.Value, 32)
+	if err != nil {
+		return "", err
+	}
+
+	value_second_currency, err := strconv.ParseFloat(second_fiatCurrency.Value, 32)
+	if err != nil {
+		return "", err
+	}
+
+	nominal_fist_currency, err := strconv.Atoi(fist_fiatCurrency.Nominal)
+	if err != nil {
+		return "", err
+	}
+
+	nominal_second_currency, err := strconv.Atoi(second_fiatCurrency.Nominal)
+	if err != nil {
+		return "", err
+	}
+
+	tmp := value_fist_currency / (value_second_currency / float64(nominal_second_currency)) / float64(nominal_fist_currency) * float64(amount)
+	answer := fmt.Sprintf("%.4f", tmp)
+	return answer, err
+}
+
+func CharCodesKeyboard(fiatCurrency []FiatCurrency) tgbotapi.ReplyKeyboardMarkup {
+	var rows [][]tgbotapi.KeyboardButton
+
+	for i := 0; i < len(fiatCurrency); i++ {
+		row := []tgbotapi.KeyboardButton{}
+
+		for j := 0; j < 1 && i+j < len(fiatCurrency); j++ {
+			row = append(row, tgbotapi.NewKeyboardButton(fiatCurrency[i+j].CharCode+fmt.Sprintf(" (%s)", fiatCurrency[i+j].Name)))
+		}
+
+		rows = append(rows, row)
+	}
+
+	return tgbotapi.NewReplyKeyboard(rows...)
 }
