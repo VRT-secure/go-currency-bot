@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  bot:
+    image: ivan556/currency_golang_bot
+    restart: unless-stopped
+    command: ./go_bot
+    env_file:
+      - .env

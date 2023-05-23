@@ -19,8 +19,6 @@ RUN apk update && apk add --no-cache tzdata
 
 RUN adduser --disabled-password --no-create-home john-doe && chown john-doe:john-doe -R /app/
 
-COPY --from=builder /app/.env /app/go_bot /app/
-
-ENTRYPOINT ["./go_bot"]
+COPY --from=builder /app/go_bot /app/
 
 USER john-doe

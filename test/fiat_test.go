@@ -45,8 +45,8 @@ func TestSqlite3(t *testing.T) {
 		)
 		So(len(event), ShouldNotEqual, 0)
 
-		_, event = gold_price.HandleChoice(db, "pupok")
-		So(len(event), ShouldNotEqual, 0)
+		_, err = gold_price.HandleChoice(db)
+		So(err, ShouldBeNil)
 	})
 
 	Convey("Delete tables", t, func() {

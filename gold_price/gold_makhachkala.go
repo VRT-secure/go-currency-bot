@@ -34,18 +34,13 @@ func ParseGoldPriseMakhachkala(db *gorm.DB) error {
 				answer[1] = text
 			case 4:
 				answer[2] = text
+				err = insertRecordIntoTable(db, answer[0], answer[1], answer[2])
+				if err != nil {
+					log.Printf("Ошибка встаски цены золота в БД: %s", err)
+					return
+				}
 			}
 		})
-		if i == 4 {
-			if answer[0] == "" {
-				continue
-			}
-			err = insertRecordIntoTable(db, answer[0], answer[1], answer[2])
-			if err != nil {
-				log.Printf("Ошибка встаски цены золота в БД: %s", err)
-				return err
-			}
-		}
 	}
 
 	// Начать скрапинг
@@ -85,16 +80,16 @@ func IsTableEmpty(db *gorm.DB) bool {
 	return count == 0
 }
 
-func HandleChoice(db *gorm.DB, nextEvent string) (string, string) {
+func HandleChoice(db *gorm.DB) (string, error) {
 	goldPriceSlice, err := selectFromTable(db)
 	if err != nil {
-		return "Ошибка операции, отправьте команду снова или отмените операцию /cancel", ""
+		return "Ошибка операции, отправьте команду снова или отмените операцию /cancel", err
 	}
 	answer := ""
 	for _, gold := range goldPriceSlice {
-		answer += fmt.Sprintf("Проба %s", gold.GoldContent)
-		answer += fmt.Sprintf("Цена от %s", gold.PriceFrom)
-		answer += fmt.Sprintf("Цена до %s", gold.PriceUpTo)
+		answer += fmt.Sprintf("Проба %s:\n", gold.GoldContent)
+		answer += fmt.Sprintf("Цена от %s\n", gold.PriceFrom)
+		answer += fmt.Sprintf("Цена до %s\n\n", gold.PriceUpTo)
 	}
-	return answer, nextEvent
+	return answer, err
 }

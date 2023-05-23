@@ -11,17 +11,12 @@ import (
 	"kakafoni/logic"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
 	token := os.Getenv("TELEGRAM_APITOKEN")
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
@@ -126,10 +121,10 @@ func main() {
 				msg.Text = "Выберите первую валюту"
 			case logic.MainMenuKeyboard_goldMakhachkala:
 				msg.Text = "Цена золота в Махачкале"
-				msg.Text, event = gold_price.HandleChoice(db, logic.Start)
 				bot.Send(msg)
-				if event == "" {
-					continue
+				msg.Text, err = gold_price.HandleChoice(db)
+				if err != nil {
+					msg.Text, event = logic.ERROR_MESSAGE, ""
 				}
 			default:
 				msg.Text = fiat_currency.INCORRECT_OPERATION
