@@ -54,5 +54,8 @@ jobs:
           username: rostom
           key: ${{ secrets.SSH_PRYVATE_KEY }}
           script: |
-            docker-compose pull && docker-compose down && docker-compose up -d
+            cd ~/cyrrency_bot && \
+            docker-compose pull && \
+            docker-compose down && \
+            docker-compose up -d
 
