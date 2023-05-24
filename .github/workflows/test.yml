@@ -9,13 +9,11 @@ jobs:
   test-lint:
     name: Test
     runs-on: ubuntu-22.04
-    env:
-      TZ: Europe/Moscow    # Установка переменной окружения TZ на Europe/Moscow
     steps:
       - name: checkout
         uses: actions/checkout@v2
 
-      - name: Set system timezone
+      - name: Set system timezone to Moscow
         run: |
           sudo ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime
           sudo dpkg-reconfigure -f noninteractive tzdata

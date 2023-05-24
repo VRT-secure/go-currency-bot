@@ -85,7 +85,7 @@ func HandleChoice(db *gorm.DB) (string, error) {
 	if err != nil {
 		return "Ошибка операции, отправьте команду снова или отмените операцию /cancel", err
 	}
-	answer := ""
+	answer := fmt.Sprintf("Дата полученных данных: %s\n\n", goldPriceSlice[0].CreatedAt.Format("2006-01-02"))
 	for _, gold := range goldPriceSlice {
 		answer += fmt.Sprintf("Проба %s:\n", gold.GoldContent)
 		answer += fmt.Sprintf("Цена от %s\n", gold.PriceFrom)
