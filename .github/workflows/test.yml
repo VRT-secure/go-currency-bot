@@ -10,7 +10,7 @@ jobs:
     name: Test
     runs-on: ubuntu-22.04
     env:
-    TZ: Europe/Moscow    # Установка переменной окружения TZ на Europe/Moscow
+      TZ: Europe/Moscow    # Установка переменной окружения TZ на Europe/Moscow
     steps:
       - name: checkout
         uses: actions/checkout@v2
