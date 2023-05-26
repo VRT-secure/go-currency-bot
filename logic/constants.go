@@ -16,6 +16,6 @@ const SecondFiatCyrrency = "secondFiatCyrrency"
 const FiatAmount = "fiatAmount"
 const Start = "start"
 
-const CountSeconds = 2
+const CountSeconds = 1
 
 const ERROR_MESSAGE = "Возникла непредвиденная ошибка, либо вы отправили неверные данные, попробуйте снова или отправьте /cancel"
