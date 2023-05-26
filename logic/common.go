@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/looplab/fsm"
@@ -23,6 +24,8 @@ type UserFSM struct {
 	ChatID   int64
 	FSM      *fsm.FSM
 	UserData map[string]string
+	TimeRequest time.Time
+	IsBlocked bool
 }
 
 func NewUserFSM(chatID int64) *UserFSM {
@@ -37,7 +40,7 @@ func NewUserFSM(chatID int64) *UserFSM {
 			{Name: Start, Src: []string{"init",
 				ChoiceOperation, ChoiceOneFiatCurrency,
 				ChoiceFirstFiatCurrency, ChoiceSecondFiatCurrency,
-				ChoiceFiatAmount,}, Dst: ChoiceOperation},
+				ChoiceFiatAmount}, Dst: ChoiceOperation},
 			{Name: CourseFiatCurrency, Src: []string{ChoiceOperation}, Dst: ChoiceOneFiatCurrency},
 			{Name: FirstFiatCyrrency, Src: []string{ChoiceOperation}, Dst: ChoiceFirstFiatCurrency},
 			{Name: SecondFiatCyrrency, Src: []string{ChoiceFirstFiatCurrency}, Dst: ChoiceSecondFiatCurrency},
@@ -66,6 +69,18 @@ func (u *UserFSM) ChangeEvent(event string) {
 		}
 	}
 }
+
+func (u *UserFSM) IsSpam() bool {
+	// Получение текущего времени
+	currentTime := time.Now()
+
+	// Вычисление разницы между текущим временем и сохраненным временем запроса
+	diff := currentTime.Sub(u.TimeRequest)
+
+	// Проверка, превышает ли разница установленный интервал
+	return diff < (CountSeconds * time.Second)
+}
+
 
 func MainMenu(text string, keyboard tgbotapi.ReplyKeyboardMarkup) (tgbotapi.ReplyKeyboardMarkup, string) {
 	return keyboard, text

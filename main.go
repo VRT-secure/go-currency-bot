@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"kakafoni/database"
 	"kakafoni/fiat_currency"
@@ -89,6 +91,21 @@ func main() {
 		var event string
 
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
+
+		// защита от спама
+		if userFSM.IsSpam() {
+			if !userFSM.IsBlocked {
+				msg.Text = fmt.Sprintf("Вы превысили лимит сообщений. Подождите пожалуйста %d секунды.", logic.CountSeconds)
+				bot.Send(msg)
+				userFSM.IsBlocked = true
+				log.Printf("user: %d blocked", userFSM.ChatID)
+			}
+			continue
+		} else {
+			userFSM.TimeRequest = time.Now()
+			userFSM.IsBlocked = false
+		}
+
 		switch update.Message.Command() {
 		case logic.Start:
 			event = logic.Start
