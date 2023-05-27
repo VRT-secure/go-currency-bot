@@ -5,7 +5,6 @@ import (
 	"kakafoni/database"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/gocolly/colly"
 	"gorm.io/gorm"
@@ -59,18 +58,10 @@ func insertRecordIntoTable(db *gorm.DB, goldContent, priceFrom, priceUpTo string
 
 func selectFromTable(db *gorm.DB) ([]GoldPriceMakhachkala, error) {
 	var goldPriceMakhachkala []GoldPriceMakhachkala
-	location, err := time.LoadLocation("Europe/Moscow")
-	if err != nil {
-		log.Printf("Ошибка установки московского часового пояса для поиска: %v", err)
-	}
-	now := time.Now().In(location)
-	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, location)
-	endOfDay := startOfDay.Add(24 * time.Hour)
-	result := db.Where("created_at >= ? AND created_at < ?", startOfDay, endOfDay).Find(&goldPriceMakhachkala)
+	result := db.Order("created_at ASC").Limit(8).Find(&goldPriceMakhachkala)
 	if result.Error != nil {
-		log.Printf("Ошибка поиска записей в БД по текущей дате: %v", result.Error)
+		log.Printf("Ошибка поиска записей цены золота: %v", result.Error)
 	}
-
 	return goldPriceMakhachkala, result.Error
 }
 
