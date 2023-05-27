@@ -57,14 +57,15 @@ func main() {
 	}
 
 	// запускаем cron задачу, которая выполняется каждую полночь
-	c := cron.New()
-	c.AddFunc("0 0 0 * * *", func() {
+	location, _ := time.LoadLocation("Europe/Moscow")
+	c := cron.New(cron.WithLocation(location))
+	c.AddFunc("@midnight", func() {
 		fiat_currency.ParseJsonIntoTable(db, fiat_currency.URL_TO_JSON_FIAT)
 		gold_price.ParseGoldPriseMakhachkala(db)
 		log.Printf("\nСработал крон\n")
 	})
 	c.Start()
-
+ 
 	updateConfig := tgbotapi.NewUpdate(-1)
 	updateConfig.Timeout = 60
 
