@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"kakafoni/database"
 
@@ -82,18 +81,10 @@ func IsTableEmpty(db *gorm.DB) bool {
 
 func CharCodes(db *gorm.DB) []FiatCurrency {
 	var fiatCurrency []FiatCurrency
-	location, err := time.LoadLocation("Europe/Moscow")
-	if err != nil {
-		log.Printf("Ошибка установки московского часового пояса для поиска фиатных валют: %v", err)
-	}
-	now := time.Now().In(location)
-	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, location)
-	endOfDay := startOfDay.Add(24 * time.Hour)
-	result := db.Where("created_at >= ? AND created_at < ?", startOfDay, endOfDay).Find(&fiatCurrency)
+	result := db.Order("created_at ASC").Limit(43).Find(&fiatCurrency)
 	if result.Error != nil {
-		log.Printf("Ошибка поиска записей фиатных валют в БД по текущей дате: %v", result.Error)
+		log.Printf("Ошибка поиска записей фиатных валют: %v", result.Error)
 	}
-
 	return fiatCurrency
 }
 
