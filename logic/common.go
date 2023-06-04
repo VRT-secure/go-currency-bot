@@ -18,6 +18,9 @@ var MainMenuKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(MainMenuKeyboard_goldMakhachkala),
 	),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(MainMenuKeyboard_metalCBR),
+	),
 )
 
 type UserFSM struct {

@@ -1,6 +1,6 @@
-package gold_price
+package metal_price
 
-var gold_url_with_probes_mackhachkala = []string{
+var Gold_url_with_probes_mackhachkala = []string{
 	"https://zaim.com/zaemshchikam/cena-zolota-za-gramm/makhachkala/?gold=375",
 	"https://zaim.com/zaemshchikam/cena-zolota-za-gramm/makhachkala/?gold=500",
 	"https://zaim.com/zaemshchikam/cena-zolota-za-gramm/makhachkala/?gold=583",
@@ -11,3 +11,5 @@ var gold_url_with_probes_mackhachkala = []string{
 	"https://zaim.com/zaemshchikam/cena-zolota-za-gramm/makhachkala/?gold=958",
 }
 
+const Url_metal_price_cbr = "https://mfd.ru/centrobank/preciousmetals/"
+	

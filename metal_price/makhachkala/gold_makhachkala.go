@@ -1,8 +1,9 @@
-package gold_price
+package makhachkala
 
 import (
 	"fmt"
 	"kakafoni/database"
+	"kakafoni/metal_price"
 	"log"
 	"strings"
 
@@ -43,7 +44,7 @@ func ParseGoldPriseMakhachkala(db *gorm.DB) error {
 	}
 
 	// Начать скрапинг
-	for _, url := range gold_url_with_probes_mackhachkala {
+	for _, url := range metal_price.Gold_url_with_probes_mackhachkala {
 		c.Visit(url)
 	}
 
@@ -58,7 +59,7 @@ func insertRecordIntoTable(db *gorm.DB, goldContent, priceFrom, priceUpTo string
 
 func selectFromTable(db *gorm.DB) ([]GoldPriceMakhachkala, error) {
 	var goldPriceMakhachkala []GoldPriceMakhachkala
-	result := db.Order("created_at ASC").Limit(8).Find(&goldPriceMakhachkala)
+	result := db.Order("id DESC").Limit(8).Find(&goldPriceMakhachkala)
 	if result.Error != nil {
 		log.Printf("Ошибка поиска записей цены золота: %v", result.Error)
 	}

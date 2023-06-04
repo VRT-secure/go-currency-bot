@@ -5,7 +5,8 @@ import (
 
 	"kakafoni/database"
 	"kakafoni/fiat_currency"
-	"kakafoni/gold_price"
+	"kakafoni/metal_price/makhachkala"
+	"kakafoni/metal_price/russia"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"gorm.io/driver/sqlite"
@@ -21,14 +22,18 @@ func TestSqlite3(t *testing.T) {
 	Convey("Create tables", t, func() {
 		err := database.CreateTable(db, &fiat_currency.FiatCurrency{})
 		So(err, ShouldBeNil)
-		err = database.CreateTable(db, &gold_price.GoldPriceMakhachkala{})
+		err = database.CreateTable(db, &makhachkala.GoldPriceMakhachkala{})
+		So(err, ShouldBeNil)
+		err = database.CreateTable(db, &russia.MetalPrices{})
 		So(err, ShouldBeNil)
 	})
 
 	Convey("Parse into tables", t, func() {
 		err := fiat_currency.ParseJsonIntoTable(db, fiat_currency.URL_TO_JSON_FIAT)
 		So(err, ShouldBeNil)
-		err = gold_price.ParseGoldPriseMakhachkala(db)
+		err = makhachkala.ParseGoldPriseMakhachkala(db)
+		So(err, ShouldBeNil)
+		err = russia.ParseCbrMetalPrice(db)
 		So(err, ShouldBeNil)
 	})
 
@@ -45,14 +50,19 @@ func TestSqlite3(t *testing.T) {
 		)
 		So(len(event), ShouldNotEqual, 0)
 
-		_, err = gold_price.HandleChoice(db)
+		_, err = makhachkala.HandleChoice(db)
+		So(err, ShouldBeNil)
+
+		_, err = russia.HandleChoice(db)
 		So(err, ShouldBeNil)
 	})
 
 	Convey("Delete tables", t, func() {
 		err := database.DropTable(db, &fiat_currency.FiatCurrency{})
 		So(err, ShouldBeNil)
-		err = database.DropTable(db, &gold_price.GoldPriceMakhachkala{})
+		err = database.DropTable(db, &makhachkala.GoldPriceMakhachkala{})
+		So(err, ShouldBeNil)
+		err = database.DropTable(db, &russia.MetalPrices{})
 		So(err, ShouldBeNil)
 	})
 }
