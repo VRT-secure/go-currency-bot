@@ -3,6 +3,7 @@ package logic
 const MainMenuKeyboard_fiatCurrency = "Узнать курс фиатной валюты"
 const MainMenuKeyboard_calculateFiatCyrrencyes = "Калькулятор фиатных валют"
 const MainMenuKeyboard_goldMakhachkala = "Цена золота в Махачкале"
+const MainMenuKeyboard_metalCBR = "Цена драгметаллов по курсу ЦБР"
 
 const ChoiceOperation = "choiceOperation"
 const ChoiceFirstFiatCurrency = "choiceFirstFiatCurrency"
